@@ -43,7 +43,6 @@ const deedSchema = new mongoose.Schema(
   {
     title: [tnxSchema],
     owners: [ownerSchema],
-    signedby: { type: String, required: true },
     area: { type: Number, required: true },
     value: { type: Number, required: true },
     location: [locationPointSchema],
@@ -75,8 +74,13 @@ const deedSchema = new mongoose.Schema(
     district: { type: String, required: true },
     division: { type: String, required: true },
 
-    notaryName: { type: String, required: true },
     registrationDate: { type: Date, required: true },
+
+    //Signaturing later added by me and, this can be changed.
+    surveySignature: { type: String },
+    surveySignedBy: { type: String },
+    notarySignature: { type: String },
+    notarySignedBy: { type: String }
   },
   { timestamps: true }
 );
