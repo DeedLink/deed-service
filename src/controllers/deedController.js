@@ -11,7 +11,7 @@ export const createDeed = async (req, res) => {
   }
 };
 
-export const getDeeds = async (req, res) => {
+export const getDeeds = async (_req, res) => {
   try {
     const deeds = await Deed.find();
     res.json(deeds);
@@ -51,7 +51,6 @@ export const deleteDeed = async (req, res) => {
 };
 
 // Signaturing process, I include this for all type of signaturing ti be able.
-
 export const addSign = asyncHandler(async (req, res) => {
   const { id, type } = req.params;
   const { signature } = req.body;

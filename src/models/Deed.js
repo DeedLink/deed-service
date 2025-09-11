@@ -39,10 +39,23 @@ const sideSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const deedTypeSchema = new mongoose.Schema(
+  {
+    deedType: {
+      type: String,
+      enum: ["Powner of Attoney", "Gift", "Sale", "Exchange", "Lease", "Mortgage", "Partition", "Adverse Possession", "Other", "All", "None", "Not Registered", "Cancelled", "Pending"],
+      required: true,
+    },
+    deedNumber: { type: String, required: true },
+  },
+  { _id: false }
+);
+
 const deedSchema = new mongoose.Schema(
   {
     title: [tnxSchema],
     owners: [ownerSchema],
+    deedTypes: { type:deedTypeSchema, required: true },
     area: { type: Number, required: true },
     value: { type: Number, required: true },
     location: [locationPointSchema],
