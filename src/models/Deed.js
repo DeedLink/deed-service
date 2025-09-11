@@ -29,15 +29,14 @@ const locationPointSchema = new mongoose.Schema(
 
 const sideSchema = new mongoose.Schema(
   {
-    direction: {
-      type: String,
-      enum: ["North", "South", "East", "West"],
-      required: true,
-    },
-    deedNumber: { type: String, required: true },
+    North: { type: String, trim: true },
+    South: { type: String, trim: true },
+    East:  { type: String, trim: true },
+    West:  { type: String, trim: true }
   },
   { _id: false }
 );
+
 
 const deedTypeSchema = new mongoose.Schema(
   {
@@ -80,11 +79,10 @@ const deedSchema = new mongoose.Schema(
   {
     title: [tnxSchema],
     owners: [ownerSchema],
-    deedTypes: { type:deedTypeSchema, required: true },
-    area: { type: Number, required: true },
+    deedType: { type:deedTypeSchema, required: true },
     value: { type: Number, required: true },
     location: [locationPointSchema],
-    sides: [sideSchema],
+    sides: sideSchema,
     deedNumber: { type: String, required: true, unique: true },
     landType: {
       type: String,
