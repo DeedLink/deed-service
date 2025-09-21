@@ -3,10 +3,12 @@ import { ethers } from "ethers";
 import asyncHandler from "express-async-handler";
 
 export const createDeed = async (req, res) => {
+   console.log("Request Body:", req.body);
   try {
     const deed = await Deed.create(req.body);
     res.status(201).json(deed);
   } catch (error) {
+    console.error("Error creating deed:", error);
     res.status(400).json({ message: "Error creating deed", error });
   }
 };
@@ -50,7 +52,7 @@ export const deleteDeed = async (req, res) => {
   }
 };
 
-// Signaturing process, I include this for all type of signaturing ti be able.
+// Signaturing process, I include this for all type of signaturing to be able.
 export const addSign = asyncHandler(async (req, res) => {
   const { id, type } = req.params;
   const { signature } = req.body;
