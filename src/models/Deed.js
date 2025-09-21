@@ -86,7 +86,7 @@ const deedSchema = new mongoose.Schema(
     deedNumber: { type: String, required: true, unique: true },
     landType: {
       type: String,
-      enum: ["Paddy land", "Highland"],
+      enum: ["Paddy land", "Highland", "Residential"],
       required: true,
     },
     timestamp: { type: Number, required: true },
@@ -101,7 +101,7 @@ const deedSchema = new mongoose.Schema(
     landArea: { type: Number, required: true },
     landSizeUnit: {
       type: String,
-      enum: ["Perches", "Acres", "Hectares"],
+      enum: ["Perches", "Acres", "Hectares", "Sqm", "Sqft"],
       default: "Perches",
     },
     surveyPlanNumber: { type: String },
@@ -114,9 +114,9 @@ const deedSchema = new mongoose.Schema(
 
     //Signaturing later added by me and, this can be changed.
     surveySignature: { type: String },
-    surveySignedBy: { type: String },
+    surveyAssigned: { type: String },
     notarySignature: { type: String },
-    notarySignedBy: { type: String }
+    notaryAssigned: { type: String }
   },
   { timestamps: true }
 );

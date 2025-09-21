@@ -36,7 +36,7 @@ export const updateDeed = async (req, res) => {
   try {
     const deed = await Deed.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!deed) return res.status(404).json({ message: "Deed not found" });
-    res.json(deed);
+    res.json({status: 200, deed });
   } catch (error) {
     res.status(400).json({ message: "Error updating deed", error });
   }
