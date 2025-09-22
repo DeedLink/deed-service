@@ -52,6 +52,19 @@ export const deleteDeed = async (req, res) => {
   }
 };
 
+export const getDeedsBySurveyWalletAddress = async (req, res) => {
+  try {
+    const { surveyWalletAddress } = req.params;
+    const deeds = await Deed.find({ surveyAssigned: surveyWalletAddress });
+    if (deeds.length === 0) {
+      return res.status(404).json({ message: "No deeds found for this survey wallet address" });
+    }
+    res.json(deeds);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching deeds", error });
+  }
+};
+
 // Signaturing process, I include this for all type of signaturing to be able.
 export const addSign = asyncHandler(async (req, res) => {
   const { id, type } = req.params;
