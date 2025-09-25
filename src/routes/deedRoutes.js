@@ -14,7 +14,7 @@ const router = express.Router();
 
 router.get("/",protect, getDeeds);
 router.get("/:id",protect, getDeedById);
-router.get("/survey/:surveyWalletAddress", protect, getDeedsBySurveyWalletAddress);
+router.get("/surveyor/:surveyWalletAddress", protect, getDeedsBySurveyWalletAddress);
 
 router.post("/", protect, createDeed);
 router.put("/:id", protect, updateDeed);

@@ -77,6 +77,9 @@ const deedTypeSchema = new mongoose.Schema(
 
 const deedSchema = new mongoose.Schema(
   {
+    tokenId: {
+      type: Number
+    },
     title: [tnxSchema],
     owners: [ownerSchema],
     deedType: { type:deedTypeSchema, required: true },
