@@ -55,7 +55,7 @@ export const deleteDeed = async (req, res) => {
 export const getDeedsBySurveyWalletAddress = async (req, res) => {
   try {
     const { surveyWalletAddress } = req.params;
-    const deeds = await Deed.find({ surveyAssigned: surveyWalletAddress });
+    const deeds = await Deed.find({ surveyAssigned: surveyWalletAddress, tokenId: { $exists: true, $ne: null } });
     if (deeds.length === 0) {
       return res.status(404).json({ message: "No deeds found for this survey wallet address" });
     }
