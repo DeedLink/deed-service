@@ -65,6 +65,34 @@ export const getDeedsBySurveyWalletAddress = async (req, res) => {
   }
 };
 
+export const setTokenId = async (req, res) => {
+  try {
+    const { deedNumber, tokenId } = req.body;
+
+    if (!deedNumber || !tokenId) {
+      return res.status(400).json({ message: "deedNumber and tokenId are required" });
+    }
+
+    const deed = await Deed.findOneAndUpdate(
+      { deedNumber },
+      { tokenId },
+      { new: true }
+    );
+
+    if (!deed) {
+      return res.status(404).json({ message: "Deed not found" });
+    }
+
+    res.status(200).json({
+      message: "Token ID set successfully",
+      deed
+    });
+  } catch (error) {
+    console.error("Error setting token ID:", error);
+    res.status(500).json({ message: "Error setting token ID", error });
+  }
+};
+
 // Signaturing process, I include this for all type of signaturing to be able.
 export const addSign = asyncHandler(async (req, res) => {
   const { id, type } = req.params;
