@@ -8,6 +8,7 @@ import {
   addSign,
   getDeedsBySurveyWalletAddress,
   setTokenId,
+  updatesurveyPlanNumber,
 } from "../controllers/deedController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -17,6 +18,7 @@ router.get("/",protect, getDeeds);
 router.get("/:id",protect, getDeedById);
 router.get("/surveyor/:surveyWalletAddress", protect, getDeedsBySurveyWalletAddress);
 router.post("/set-token", setTokenId);
+router.post("/update-servey-numer/:id", updatesurveyPlanNumber);
 
 router.post("/", protect, createDeed);
 router.put("/:id", protect, updateDeed);
