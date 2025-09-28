@@ -14,11 +14,13 @@ import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get("/",protect, getDeeds);
-router.get("/:id",protect, getDeedById);
 router.get("/surveyor/:surveyWalletAddress", protect, getDeedsBySurveyWalletAddress);
 router.post("/set-token", setTokenId);
-router.post("/update-servey-numer/:id", updatesurveyPlanNumber);
+router.put("/update-survey-number/:id", updatesurveyPlanNumber);
+
+router.get("/",protect, getDeeds);
+router.get("/:id",protect, getDeedById);
+
 
 router.post("/", protect, createDeed);
 router.put("/:id", protect, updateDeed);

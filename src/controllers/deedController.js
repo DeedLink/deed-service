@@ -102,9 +102,9 @@ export const updatesurveyPlanNumber = async (req, res) => {
       return res.status(400).json({ message: "surveyPlanNumber is required" });
     }
 
-    const deed = await Deed.findByIdAndUpdate(
-      id,
-      { surveyPlanNumber },
+    const deed = await Deed.findOneAndUpdate(
+      { deedNumber: id },
+      { $set: { surveyPlanNumber } },
       { new: true }
     );
 
@@ -121,6 +121,7 @@ export const updatesurveyPlanNumber = async (req, res) => {
     res.status(500).json({ message: "Error updating survey number", error });
   }
 };
+
 
 // Signaturing process, I include this for all type of signaturing to be able.
 export const addSign = asyncHandler(async (req, res) => {
