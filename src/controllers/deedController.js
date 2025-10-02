@@ -65,6 +65,51 @@ export const getDeedsBySurveyWalletAddress = async (req, res) => {
   }
 };
 
+export const getDeedsByNotaryWalletAddress = async (req, res) => {
+  try {
+    const { notaryWalletAddress } = req.params;
+    const deeds = await Deed.find({ notaryAssigned: notaryWalletAddress, tokenId: { $exists: true, $ne: null } });
+    if (deeds.length === 0) {
+      return res.status(404).json({ message: "No deeds found for this notary wallet address" });
+    }
+    res.json(deeds);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching deeds", error });
+  }
+};
+
+export const getDeedsByIVSLWalletAddress = async (req, res) => {
+  try {
+    const { ivslWalletAddress } = req.params;
+    const deeds = await Deed.find({ ivslAssigned: ivslWalletAddress, tokenId: { $exists: true, $ne: null } });
+    if (deeds.length === 0) {
+      return res.status(404).json({ message: "No deeds found for this ivsl wallet address" });
+    }
+    res.json(deeds);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching deeds", error });
+  }
+};
+
+export const getDeedsByOwnerWalletAddress = async (req, res) => {
+  console.log(req.params);
+  try {
+    const { ownerWalletAddress } = req.params;
+    const deeds = await Deed.find({
+      owners: { $elemMatch: { address: ownerWalletAddress } },
+      tokenId: { $exists: true, $ne: null }
+    });
+
+    if (deeds.length === 0) {
+      return res.status(404).json({ message: "No deeds found for this owner's wallet address" });
+    }
+
+    res.json(deeds);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching deeds", error });
+  }
+};
+
 export const setTokenId = async (req, res) => {
   try {
     const { deedNumber, tokenId } = req.body;

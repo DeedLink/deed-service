@@ -119,7 +119,9 @@ const deedSchema = new mongoose.Schema(
     surveySignature: { type: String },
     surveyAssigned: { type: String },
     notarySignature: { type: String },
-    notaryAssigned: { type: String }
+    notaryAssigned: { type: String },
+    ivslSignature: { type: String },
+    ivslAssigned: { type: String }
   },
   { timestamps: true }
 );
