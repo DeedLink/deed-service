@@ -167,16 +167,15 @@ export const updatesurveyPlanNumber = async (req, res) => {
   }
 };
 
-
 // Signaturing process, I include this for all type of signaturing to be able.
 export const addSign = asyncHandler(async (req, res) => {
   const { id, type } = req.params;
   const { signature } = req.body;
   const user = req.user;
 
-  if (!['survey', 'notary'].includes(type)) {
+  if (!["survey", "notary", "ivsl"].includes(type)) {
     res.status(400);
-    throw new Error("Invalid signing type. Must be 'survey' or 'notary'");
+    throw new Error("Invalid signing type. Must be 'survey', 'notary' or 'ivsl'");
   }
 
   const deed = await Deed.findById(id);
@@ -185,22 +184,23 @@ export const addSign = asyncHandler(async (req, res) => {
     throw new Error("Deed not found");
   }
 
-  const signedField = `${type}SignedBy`;
-  if (deed[signedField]) {
+  const signatureField = `${type}Signature`;
+
+  const message = JSON.stringify(deed.tokenId);
+
+  const recoveredAddress = ethers.verifyMessage(message, signature);
+
+  if (!recoveredAddress || !deed.surveyAssigned) {
     res.status(400);
-    throw new Error(`Deed already signed by ${type}`);
+    throw new Error("Missing recovered address or user wallet address");
   }
 
-  const messageHash = ethers.utils.hashMessage(JSON.stringify(deed.content));
-
-  const recoveredAddress = ethers.utils.verifyMessage(messageHash, signature);
-  if (recoveredAddress.toLowerCase() !== user.walletAddress.toLowerCase()) {
+  if (recoveredAddress.toLowerCase() !== deed.surveyAssigned.toLowerCase()) {
     res.status(401);
     throw new Error("Invalid signature");
   }
 
-  deed[`${type}Signature`] = signature;
-  deed[signedField] = user.walletAddress;
+  deed[signatureField] = signature;
   await deed.save();
 
   res.status(200).json({
@@ -209,9 +209,11 @@ export const addSign = asyncHandler(async (req, res) => {
       id: deed._id,
       content: deed.content,
       surveySignature: deed.surveySignature,
-      surveySignedBy: deed.surveySignedBy,
+      surveyAssigned: deed.surveyAssigned,
       notarySignature: deed.notarySignature,
-      notarySignedBy: deed.notarySignedBy,
+      notaryAssigned: deed.notaryAssigned,
+      ivslSignature: deed.ivslSignature,
+      ivslAssigned: deed.ivslAssigned,
     },
   });
 });
