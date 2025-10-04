@@ -101,34 +101,70 @@ export const updateValuation = async (req, res) => {
       return res.status(404).json({ message: "Deed not found" });
     }
 
-    let newValuation = {
-      requestedValue: null,
-      estimatedValue: null,
-      isAccepted: null,
-      timestamp: Date.now(),
-    };
+    const now = Date.now();
 
     if (mode === "request") {
-      newValuation.requestedValue = requestedValue;
+      const newValuation = {
+        requestedValue: typeof requestedValue !== "undefined" && requestedValue !== null ? Number(requestedValue) : null,
+        estimatedValue: null,
+        isAccepted: null,
+        timestamp: now,
+      };
+
+      deed.valuation.push(newValuation);
+      await deed.save();
+
+      return res.status(200).json({
+        message: "Requested valuation added",
+        valuation: newValuation,
+        deed,
+      });
     }
 
     if (mode === "estimate") {
-      newValuation.estimatedValue = estimatedValue;
-      newValuation.isAccepted = isAccepted;
+      const est = typeof estimatedValue !== "undefined" && estimatedValue !== null ? Number(estimatedValue) : null;
+
+      if (deed.valuation && deed.valuation.length > 0) {
+        const lastIndex = deed.valuation.length - 1;
+        const last = deed.valuation[lastIndex];
+
+        if (last.estimatedValue === null || typeof last.estimatedValue === "undefined") {
+          last.estimatedValue = est;
+          if (typeof isAccepted !== "undefined") last.isAccepted = isAccepted;
+          await deed.save();
+
+          return res.status(200).json({
+            message: "Estimated value updated on last valuation",
+            valuation: last,
+            deed,
+          });
+        }
+      }
+
+      const newValuation = {
+        requestedValue: null,
+        estimatedValue: est,
+        isAccepted: typeof isAccepted !== "undefined" ? isAccepted : null,
+        timestamp: now,
+      };
+
+      deed.valuation.push(newValuation);
+      await deed.save();
+
+      return res.status(200).json({
+        message: "Estimated valuation added as new record",
+        valuation: newValuation,
+        deed,
+      });
     }
 
-    deed.valuation.push(newValuation);
-    await deed.save();
-
-    res.status(200).json({
-      message: "Valuation record added successfully",
-      deed,
-    });
+    return res.status(400).json({ message: "Invalid mode. Use 'request' or 'estimate'." });
   } catch (error) {
     console.error("Error updating valuation:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
+
 
 export const getDeedsByOwnerWalletAddress = async (req, res) => {
   console.log(req.params);
