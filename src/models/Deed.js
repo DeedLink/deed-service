@@ -1,5 +1,15 @@
 import mongoose from "mongoose";
 
+const valuationSchema = new mongoose.Schema(
+  {
+    requestedValue: { type: Number, required: false },
+    estimatedValue: { type: Number, required: false },
+    isAccepted: { type: Boolean, required: false },
+    timestamp: { type: Number, required: true },
+  },
+  { _id: true }
+);
+
 const tnxSchema = new mongoose.Schema(
   {
     from: { type: String, required: true },
@@ -83,7 +93,7 @@ const deedSchema = new mongoose.Schema(
     title: [tnxSchema],
     owners: [ownerSchema],
     deedType: { type:deedTypeSchema, required: true },
-    value: { type: Number, required: true },
+    valuation: [valuationSchema],
     location: [locationPointSchema],
     sides: sideSchema,
     deedNumber: { type: String, required: true, unique: true },

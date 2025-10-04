@@ -94,25 +94,41 @@ export const getDeedsByIVSLWalletAddress = async (req, res) => {
 export const updateValuation = async (req, res) => {
   try {
     const { id } = req.params;
-    const { value } = req.body;
+    const { requestedValue, estimatedValue, isAccepted, mode } = req.body;
 
     const deed = await Deed.findById(id);
     if (!deed) {
       return res.status(404).json({ message: "Deed not found" });
     }
-    deed.value = value;
+
+    let newValuation = {
+      requestedValue: null,
+      estimatedValue: null,
+      isAccepted: null,
+      timestamp: Date.now(),
+    };
+
+    if (mode === "request") {
+      newValuation.requestedValue = requestedValue;
+    }
+
+    if (mode === "estimate") {
+      newValuation.estimatedValue = estimatedValue;
+      newValuation.isAccepted = isAccepted;
+    }
+
+    deed.valuation.push(newValuation);
     await deed.save();
 
     res.status(200).json({
-      message: "Valuation updated successfully",
+      message: "Valuation record added successfully",
       deed,
     });
-  }
-   catch (error){
+  } catch (error) {
     console.error("Error updating valuation:", error);
     res.status(500).json({ message: "Server error" });
-   }
-}
+  }
+};
 
 export const getDeedsByOwnerWalletAddress = async (req, res) => {
   console.log(req.params);
