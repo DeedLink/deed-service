@@ -12,6 +12,7 @@ import {
   getDeedsByOwnerWalletAddress,
   getDeedsByNotaryWalletAddress,
   getDeedsByIVSLWalletAddress,
+  updateValuation,
 } from "../controllers/deedController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -20,6 +21,7 @@ const router = express.Router();
 router.get("/surveyor/:surveyWalletAddress", protect, getDeedsBySurveyWalletAddress);
 router.get("/notary/:notaryWalletAddress", protect, getDeedsByNotaryWalletAddress);
 router.get("/ivsl/:ivslWalletAddress", protect, getDeedsByIVSLWalletAddress);
+router.put("/ivsl/:id", protect, updateValuation);
 router.get("/owner/:ownerWalletAddress", protect, getDeedsByOwnerWalletAddress);
 router.post("/set-token", setTokenId);
 router.put("/update-survey-number/:id", updatesurveyPlanNumber);
