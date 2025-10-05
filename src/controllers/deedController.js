@@ -103,9 +103,13 @@ export const updateValuation = async (req, res) => {
 
     const now = Date.now();
 
+    // MODE: "request"
     if (mode === "request") {
       const newValuation = {
-        requestedValue: typeof requestedValue !== "undefined" && requestedValue !== null ? Number(requestedValue) : null,
+        requestedValue:
+          typeof requestedValue !== "undefined" && requestedValue !== null
+            ? Number(requestedValue)
+            : null,
         estimatedValue: null,
         isAccepted: null,
         timestamp: now,
@@ -121,8 +125,12 @@ export const updateValuation = async (req, res) => {
       });
     }
 
+    // MODE: "estimate"
     if (mode === "estimate") {
-      const est = typeof estimatedValue !== "undefined" && estimatedValue !== null ? Number(estimatedValue) : null;
+      const est =
+        typeof estimatedValue !== "undefined" && estimatedValue !== null
+          ? Number(estimatedValue)
+          : null;
 
       if (deed.valuation && deed.valuation.length > 0) {
         const lastIndex = deed.valuation.length - 1;
@@ -158,13 +166,40 @@ export const updateValuation = async (req, res) => {
       });
     }
 
-    return res.status(400).json({ message: "Invalid mode. Use 'request' or 'estimate'." });
+    // MODE: "estimate-requested"
+    if (mode === "estimate-requested") {
+      if (!deed.valuation || deed.valuation.length === 0) {
+        return res.status(400).json({ message: "No previous valuation found to update" });
+      }
+
+      const lastIndex = deed.valuation.length - 1;
+      const last = deed.valuation[lastIndex];
+
+      const est =
+        typeof estimatedValue !== "undefined" && estimatedValue !== null
+          ? Number(estimatedValue)
+          : null;
+
+      last.estimatedValue = est;
+      if (typeof isAccepted !== "undefined") last.isAccepted = isAccepted;
+      last.timestamp = now;
+
+      await deed.save();
+
+      return res.status(200).json({
+        message: "Latest valuation estimate updated (estimate-requested mode)",
+        valuation: last,
+        deed,
+      });
+    }
+
+    // INVALID MODE
+    return res.status(400).json({ message: "Invalid mode. Use 'request', 'estimate', or 'estimate-requested'." });
   } catch (error) {
     console.error("Error updating valuation:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };
-
 
 export const getDeedsByOwnerWalletAddress = async (req, res) => {
   console.log(req.params);
