@@ -13,6 +13,7 @@ import {
   getDeedsByNotaryWalletAddress,
   getDeedsByIVSLWalletAddress,
   updateValuation,
+  getDeedByDeedNumber,
 } from "../controllers/deedController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -28,6 +29,7 @@ router.put("/update-survey-number/:id", updatesurveyPlanNumber);
 
 router.get("/",protect, getDeeds);
 router.get("/:id",protect, getDeedById);
+router.get("/deed/:deedNumber", protect, getDeedByDeedNumber);
 
 router.post("/", protect, createDeed);
 router.put("/:id", protect, updateDeed);

@@ -32,6 +32,17 @@ export const getDeedById = async (req, res) => {
   }
 };
 
+export const getDeedByDeedNumber = async (req, res) => {
+  try {
+    const { deedNumber } = req.params;
+    const deed = await Deed.findOne({ deedNumber });
+    if (!deed) return res.status(404).json({ message: "Deed not found" });
+    res.json(deed);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching deed by deed number", error });
+  }
+};
+
 export const updateDeed = async (req, res) => {
   try {
     const deed = await Deed.findByIdAndUpdate(req.params.id, req.body, { new: true });
