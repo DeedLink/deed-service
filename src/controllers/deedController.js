@@ -35,13 +35,23 @@ export const getDeedById = async (req, res) => {
 export const getDeedByDeedNumber = async (req, res) => {
   try {
     const { deedNumber } = req.params;
-    const userAddress = req.user?.address?.toLowerCase();
+    const walletAddress = req.user?.walletAddress?.toLowerCase();
+
+    if (!walletAddress) {
+      return res.status(401).json({ message: "Unauthorized: No user info found" });
+    }
 
     const deed = await Deed.findOne({ deedNumber });
-    if (!deed) return res.status(404).json({ message: "Deed not found" });
+    if (!deed) {
+      return res.status(404).json({ message: "Deed not found" });
+    }
 
-    if (deed.ownerAddress.toLowerCase() !== userAddress && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Forbidden: You are not the owner" });
+    const isOwner = deed.owners.some(
+      (owner) => owner.address.toLowerCase() === walletAddress
+    );
+
+    if (!isOwner && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Forbidden: You are not an owner of this deed" });
     }
 
     res.json(deed);
@@ -49,7 +59,6 @@ export const getDeedByDeedNumber = async (req, res) => {
     res.status(500).json({ message: "Error fetching deed by deed number", error });
   }
 };
-
 
 export const updateDeed = async (req, res) => {
   try {
