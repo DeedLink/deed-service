@@ -355,3 +355,42 @@ export const addSign = asyncHandler(async (req, res) => {
     },
   });
 });
+
+// Instert and Transaction Title
+export const addTransactionToDeed = async (req, res) => {
+  try {
+    const { deedId } = req.params;
+    const { from, to, amount, share } = req.body;
+
+    if (!from || !to || !amount || !share) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const deed = await Deed.findById(deedId);
+    if (!deed) {
+      return res.status(404).json({ message: "Deed not found" });
+    }
+
+    const newTransaction = {
+      from,
+      to,
+      amount,
+      share,
+      timestamp: Date.now(),
+    };
+
+    deed.title.push(newTransaction);
+    await deed.save();
+
+    res.status(200).json({
+      message: "Transaction added successfully",
+      deed,
+    });
+  } catch (error) {
+    console.error("Error adding transaction:", error);
+    res.status(500).json({
+      message: "Server error while adding transaction",
+      error: error.message,
+    });
+  }
+};
