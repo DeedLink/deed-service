@@ -405,3 +405,42 @@ export const addTransactionToDeed = async (req, res) => {
     });
   }
 };
+
+// Update Owner Address
+export const updateOwnerAddress = async (req, res) => {
+  try {
+    const { deedId } = req.params;
+    const { newOwnerAddress } = req.body;
+
+    if (!newOwnerAddress) {
+      return res.status(400).json({ message: "New owner address is required" });
+    }
+
+    const deed = await Deed.findById(deedId);
+    if (!deed) {
+      return res.status(404).json({ message: "Deed not found" });
+    }
+
+    if (deed.owners && Array.isArray(deed.owners) && deed.owners.length > 0) {
+      deed.owners = [{ address: newOwnerAddress }];
+    } else if (deed.ownerAddress) {
+      deed.ownerAddress = newOwnerAddress;
+    } else {
+
+      deed.ownerAddress = newOwnerAddress;
+    }
+
+    await deed.save();
+
+    res.status(200).json({
+      message: "Owner address updated successfully",
+      deed,
+    });
+  } catch (error) {
+    console.error("Error updating owner address:", error);
+    res.status(500).json({
+      message: "Server error while updating owner address",
+      error: error.message,
+    });
+  }
+};
