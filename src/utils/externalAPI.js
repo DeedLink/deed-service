@@ -8,6 +8,7 @@ export const setTransactionWhenDeedCreated = async (deedId, ownerWalletAddress, 
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        deedId,
         from: "system",
         to: ownerWalletAddress,
         hash: hash || `hash_${Date.now()}`,
