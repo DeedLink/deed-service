@@ -1,12 +1,23 @@
 import Deed from "../models/Deed.js";
 import { ethers } from "ethers";
 import asyncHandler from "express-async-handler";
+import { setTransactionWhenDeedCreated } from "../utils/externalAPI.js";
 
 export const createDeed = async (req, res) => {
    console.log("Request Body:", req.body);
   try {
     const deed = await Deed.create(req.body);
     res.status(201).json(deed);
+    if (deed && deed._id && deed.owners && deed.owners.length > 0) {
+      const ownerWalletAddress = deed.owners[0].address;
+      try {
+        await setTransactionWhenDeedCreated(deed._id, ownerWalletAddress);
+      } catch (transactionError) {
+        console.error("Failed to set transaction after deed creation:", transactionError);
+      }
+    } else {
+      console.warn("Deed created but missing ID or owners, skipping transaction setup.");
+    }
   } catch (error) {
     console.error("Error creating deed:", error);
     res.status(400).json({ message: "Error creating deed", error });
