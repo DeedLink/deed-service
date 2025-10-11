@@ -409,24 +409,26 @@ export const addTransactionToDeed = async (req, res) => {
 // Update Owner Address
 export const updateOwnerAddress = async (req, res) => {
   try {
-    const { deedId } = req.params;
+    const { tokenId } = req.params;
     const { newOwnerAddress } = req.body;
+
+    console.log("Token ID:", tokenId);
+    console.log("New Owner Address:", newOwnerAddress);
 
     if (!newOwnerAddress) {
       return res.status(400).json({ message: "New owner address is required" });
     }
 
-    const deed = await Deed.findById(deedId);
+    const deed = await Deed.findOne({ tokenId: tokenId });
+
     if (!deed) {
-      return res.status(404).json({ message: "Deed not found" });
+      return res.status(404).json({ message: "Deed not found for given tokenId" });
     }
 
-    if (deed.owners && Array.isArray(deed.owners) && deed.owners.length > 0) {
-      deed.owners = [{ address: newOwnerAddress }];
-    } else if (deed.ownerAddress) {
+    if (Array.isArray(deed.owners) && deed.owners.length > 0) {
+      deed.owners = [{ address: newOwnerAddress, share: 100 }];
       deed.ownerAddress = newOwnerAddress;
     } else {
-
       deed.ownerAddress = newOwnerAddress;
     }
 

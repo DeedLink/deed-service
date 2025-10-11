@@ -33,7 +33,7 @@ router.get("/",protect, getDeeds);
 router.get("/:id",protect, getDeedById);
 router.get("/deed/:deedNumber", protect, getDeedByDeedNumber);
 router.post("/:deedId/transaction", addTransactionToDeed);
-router.put("/update-owner/:deedId", updateOwnerAddress);
+router.put("/update-owner/:tokenId", updateOwnerAddress);
 
 router.post("/", protect, createDeed);
 router.put("/:id", protect, updateDeed);
