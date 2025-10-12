@@ -427,9 +427,8 @@ export const updateOwnerAddress = async (req, res) => {
 
     if (Array.isArray(deed.owners) && deed.owners.length > 0) {
       deed.owners = [{ address: newOwnerAddress, share: 100 }];
-      deed.ownerAddress = newOwnerAddress;
     } else {
-      deed.ownerAddress = newOwnerAddress;
+      deed.owners = [{ address: newOwnerAddress, share: 100 }];
     }
 
     await deed.save();
