@@ -1,7 +1,7 @@
 import Deed from "../models/Deed.js";
 import { ethers } from "ethers";
 import asyncHandler from "express-async-handler";
-import { setTransactionWhenDeedCreated } from "../utils/externalAPI.js";
+import { fullDeedDirectTransaction, setTransactionWhenDeedCreated } from "../utils/externalAPI.js";
 
 export const createDeed = async (req, res) => {
    console.log("Request Body:", req.body);
@@ -441,6 +441,54 @@ export const updateOwnerAddress = async (req, res) => {
     console.error("Error updating owner address:", error);
     res.status(500).json({
       message: "Server error while updating owner address",
+      error: error.message,
+    });
+  }
+};
+
+// Update Full Owner Address (with transaction)
+export const updateFullOwnerAddress = async (req, res) => {
+  try {
+    const { tokenId } = req.params;
+    const { newOwnerAddress, fromAddress, hash, amount } = req.body;
+
+    console.log("Token ID:", tokenId);
+    console.log("New Owner Address:", newOwnerAddress);
+
+    if (!newOwnerAddress) {
+      return res.status(400).json({ message: "New owner address is required" });
+    }
+
+    const deed = await Deed.findOne({ tokenId });
+    if (!deed) {
+      return res.status(404).json({ message: "Deed not found for given tokenId" });
+    }
+
+    deed.owners = [{ address: newOwnerAddress, share: 100 }];
+    await deed.save();
+
+    try {
+      const transactionResponse = await fullDeedDirectTransaction(
+        deed._id,
+        fromAddress || "unknown",
+        newOwnerAddress,
+        hash || `hash_${Date.now()}`,
+        amount || 0
+      );
+
+      console.log("Full Deed Transaction Created:", transactionResponse);
+    } catch (txnError) {
+      console.error("Error creating full deed transaction:", txnError);
+    }
+
+    res.status(200).json({
+      message: "Full owner address updated successfully and transaction recorded",
+      deed,
+    });
+  } catch (error) {
+    console.error("Error updating full owner address:", error);
+    res.status(500).json({
+      message: "Server error while updating full owner address",
       error: error.message,
     });
   }
