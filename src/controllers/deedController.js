@@ -450,7 +450,7 @@ export const updateOwnerAddress = async (req, res) => {
 export const updateFullOwnerAddress = async (req, res) => {
   try {
     const { tokenId } = req.params;
-    const { newOwnerAddress, fromAddress, hash, amount } = req.body;
+    const { newOwnerAddress, fromAddress, hash, amount, newOwnerFullName, newOwnerNIC, newOwnerAddressDetail, newOwnerPhone } = req.body;
 
     console.log("Token ID:", tokenId);
     console.log("New Owner Address:", newOwnerAddress);
@@ -465,6 +465,11 @@ export const updateFullOwnerAddress = async (req, res) => {
     }
 
     deed.owners = [{ address: newOwnerAddress, share: 100 }];
+    deed.ownerFullName = newOwnerFullName || "_unset_";
+    deed.ownerNIC = newOwnerNIC || "_unset_";
+    deed.ownerAddress = newOwnerAddressDetail || "_unset_";
+    deed.ownerPhone = newOwnerPhone || "_unset_";
+
     await deed.save();
 
     try {
