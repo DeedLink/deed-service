@@ -344,7 +344,7 @@ export const addSign = asyncHandler(async (req, res) => {
     throw new Error("Missing recovered address or user wallet address");
   }
 
-  if (recoveredAddress.toLowerCase() !== deed.surveyAssigned.toLowerCase()) {
+  if (recoveredAddress.toLowerCase() !== (type === "suveyor" ? deed.surveyAssigned.toLowerCase() : type === "notary" ? deed.notaryAssigned.toLowerCase() : deed.ivslAssigned.toLowerCase())) {
     res.status(401);
     throw new Error("Invalid signature");
   }
