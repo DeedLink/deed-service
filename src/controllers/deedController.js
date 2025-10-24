@@ -344,9 +344,16 @@ export const addSign = asyncHandler(async (req, res) => {
     throw new Error("Missing recovered address or user wallet address");
   }
 
-  if (recoveredAddress.toLowerCase() !== (type === "suveyor" ? deed.surveyAssigned.toLowerCase() : type === "notary" ? deed.notaryAssigned.toLowerCase() : deed.ivslAssigned.toLowerCase())) {
+  const assignedAddress =
+    type === "survey"
+      ? deed.surveyAssigned
+      : type === "notary"
+      ? deed.notaryAssigned
+      : deed.ivslAssigned;
+
+  if (recoveredAddress.toLowerCase() !== assignedAddress.toLowerCase()) {
     res.status(401);
-    throw new Error("Invalid signature");
+    throw new Error("Invalid signature: Recovered address does not match assigned address");
   }
 
   deed[signatureField] = signature;
