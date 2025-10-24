@@ -1,0 +1,98 @@
+name: Node.js CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:6.0
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'" 
+          --health-interval 10s 
+          --health-timeout 5s 
+          --health-retries 5
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 20
+
+    - name: Install dependencies
+      run: yarn install --frozen-lockfile
+
+    - name: Wait for MongoDB
+      run: sleep 15
+
+    - name: Clone or Update deed-service Repository
+      run: |
+        if [ ! -d "deed-service" ]; then
+          git clone https://github.com/DeedLink/deed-service.git deed-service
+        else
+          cd deed-service
+          git fetch origin
+          git reset --hard origin/main
+          cd ..
+        fi
+
+    - name: Add .env to deed-service
+      run: |
+        echo "MONGO_URI=${{ secrets.MONGO_URI }}" >> deed-service/.env
+        echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> deed-service/.env
+        echo "TNX_MICROSERVICE_URL=${{ secrets.TNX_MICROSERVICE_URL }}" >> deed-service/.env
+        echo "PORT=5005" >> deed-service/.env
+
+    - name: Run Docker Compose
+      run: |
+        cd deed-service
+        docker compose pull
+        docker compose up -d --remove-orphans
+
+    - name: Build Docker Image
+      run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/deed-service:latest ./deed-service
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+    - name: Push Docker Image
+      run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/deed-service:latest
+
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        script: |
+          cd /home/ubuntu/deedlink-deployments || mkdir -p /home/ubuntu/deedlink-deployments
+          cd /home/ubuntu/deedlink-deployments
+
+          if [ ! -d "deed-service" ]; then
+            git clone https://github.com/DeedLink/deed-service.git deed-service
+          fi
+
+          cd deed-service
+          git fetch origin
+          git reset --hard origin/main
+
+          echo "MONGO_URI=${{ secrets.MONGO_URI }}" >> deed-service/.env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> deed-service/.env
+          echo "TNX_MICROSERVICE_URL=${{ secrets.TNX_MICROSERVICE_URL }}" >> deed-service/.env
+          echo "PORT=5005" >> deed-service/.env
+
+          docker compose pull
+          docker compose down
+          docker compose up -d --remove-orphans
