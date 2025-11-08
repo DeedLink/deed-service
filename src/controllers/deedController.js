@@ -511,6 +511,31 @@ export const updateFullOwnerAddress = async (req, res) => {
   }
 };
 
-export const insertPlan= async(req, res)=>{
-  console.log("instert plan");
-}
+export const insertPlan = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { plan } = req.body;
+
+    if (!plan) {
+      return res.status(400).json({ message: "Plan is required" });
+    }
+
+    const updatedDeed = await Deed.findByIdAndUpdate(
+      id,
+      { $push: { surveyPlans: plan } },
+      { new: true }
+    );
+
+    if (!updatedDeed) {
+      return res.status(404).json({ message: "Deed not found" });
+    }
+
+    res.status(200).json(updatedDeed);
+  } catch (error) {
+    console.error("Error adding survey plan:", error);
+    res.status(500).json({
+      message: "Error adding survey plan",
+      error: error.message
+    });
+  }
+};
