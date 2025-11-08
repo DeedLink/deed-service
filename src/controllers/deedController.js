@@ -510,3 +510,7 @@ export const updateFullOwnerAddress = async (req, res) => {
     });
   }
 };
+
+export const insertPlan= async(req, res)=>{
+  console.log("instert plan");
+}

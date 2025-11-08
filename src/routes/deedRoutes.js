@@ -17,6 +17,7 @@ import {
   addTransactionToDeed,
   updateOwnerAddress,
   updateFullOwnerAddress,
+  insertPlan
 } from "../controllers/deedController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -42,5 +43,9 @@ router.put("/:id", protect, updateDeed);
 router.delete("/:id", protect, deleteDeed);
 
 router.post("/:id/sign/:type", protect, addSign);
+
+// Later added need to be tested
+
+router.post("/:id/plan/", protect, insertPlan)
 
 export default router;
