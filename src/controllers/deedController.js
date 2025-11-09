@@ -514,15 +514,17 @@ export const updateFullOwnerAddress = async (req, res) => {
 export const insertPlan = async (req, res) => {
   try {
     const { id } = req.params;
-    const { plan } = req.body;
+    const { planId } = req.body;
 
-    if (!plan) {
-      return res.status(400).json({ message: "Plan is required" });
+    if (!planId) {
+      return res.status(400).json({ message: "planId is required" });
     }
+
+    const newPlan = { planId, timestamp: Date.now() };
 
     const updatedDeed = await Deed.findByIdAndUpdate(
       id,
-      { $push: { surveyPlans: plan } },
+      { $push: { surveyPlans: newPlan } },
       { new: true }
     );
 
@@ -535,7 +537,7 @@ export const insertPlan = async (req, res) => {
     console.error("Error adding survey plan:", error);
     res.status(500).json({
       message: "Error adding survey plan",
-      error: error.message
+      error: error.message,
     });
   }
 };

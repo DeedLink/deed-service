@@ -118,7 +118,12 @@ const deedSchema = new mongoose.Schema(
       default: "Perches",
     },
     surveyPlanNumber: { type: String },
-    surveyPlans: { type: [String]},
+    surveyPlans: [
+      {
+        planId: { type: String, required: true },
+        timestamp: { type: Number, required: true },
+      }
+    ],
     boundaries: { type: String },
 
     district: { type: String, required: true },
