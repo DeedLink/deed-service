@@ -541,6 +541,7 @@ export const insertPlan = async (req, res) => {
 };
 
 export const getPlans = async (req, res) => {
+  console.log("here")
   try {
     const deeds = await Deed.find(
       {},

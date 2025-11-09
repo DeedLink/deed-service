@@ -24,6 +24,8 @@ import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+router.get("/plans", protect, getPlans);
+
 router.get("/surveyor/:surveyWalletAddress", protect, getDeedsBySurveyWalletAddress);
 router.get("/notary/:notaryWalletAddress", protect, getDeedsByNotaryWalletAddress);
 router.get("/ivsl/:ivslWalletAddress", protect, getDeedsByIVSLWalletAddress);
@@ -47,6 +49,5 @@ router.post("/:id/sign/:type", protect, addSign);
 
 // Later added need to be tested
 router.post("/:id/plan", protect, insertPlan)
-router.get("/plans", protect, getPlans);
 
 export default router;
