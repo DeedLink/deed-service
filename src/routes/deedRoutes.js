@@ -46,7 +46,7 @@ router.delete("/:id", protect, deleteDeed);
 router.post("/:id/sign/:type", protect, addSign);
 
 // Later added need to be tested
-router.post("/:id/plan", insertPlan)
-router.get("/plans", getPlans);
+router.post("/:id/plan", protect, insertPlan)
+router.get("/plans", protect, getPlans);
 
 export default router;
