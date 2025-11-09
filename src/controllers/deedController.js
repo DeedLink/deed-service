@@ -539,3 +539,30 @@ export const insertPlan = async (req, res) => {
     });
   }
 };
+
+export const getPlans = async (req, res) => {
+  try {
+    const deeds = await Deed.find(
+      {},
+      {
+        surveyPlanNumber: 1,
+        surveyPlans: 1,
+        tokenId: 1,
+        deedNumber: 1,
+        _id: 1,
+      }
+    );
+
+    if (!deeds || deeds.length === 0) {
+      return res.status(404).json({ message: "No deeds with plans found" });
+    }
+
+    res.status(200).json(deeds);
+  } catch (error) {
+    console.error("Error fetching plans:", error);
+    res.status(500).json({
+      message: "Error fetching plans",
+      error: error.message,
+    });
+  }
+};
