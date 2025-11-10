@@ -2,6 +2,7 @@ import Deed from "../models/Deed.js";
 import { ethers } from "ethers";
 import asyncHandler from "express-async-handler";
 import { fullDeedDirectTransaction, setTransactionWhenDeedCreated } from "../utils/externalAPI.js";
+import { sendToQueue } from "../utils/producer.js";
 
 export const createDeed = async (req, res) => {
    console.log("Request Body:", req.body);
@@ -12,6 +13,9 @@ export const createDeed = async (req, res) => {
       const ownerWalletAddress = deed.owners[0].address;
       try {
         await setTransactionWhenDeedCreated(deed._id, ownerWalletAddress);
+        
+        const payload = { ownerWalletAddress, deed, time: new Date().toISOString() };
+        await sendToQueue(payload);
       } catch (transactionError) {
         console.error("Failed to set transaction after deed creation:", transactionError);
       }
