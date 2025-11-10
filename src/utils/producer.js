@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { getChannel } from "../hopping/rabbitmq";
+import { getChannel } from "../hopping/rabbitmq.js";
 dotenv.config();
 
 const { RABBITMQ_QUEUE } = process.env;
