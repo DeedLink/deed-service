@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 import deedRoutes from "./routes/deedRoutes.js";
 import { errorHandler } from "./middleware/errorMiddleware.js";
-import { sendToQueue } from "./utils/producer.js";
+//import { sendToQueue } from "./utils/producer.js";
 
 dotenv.config();
 connectDB();
