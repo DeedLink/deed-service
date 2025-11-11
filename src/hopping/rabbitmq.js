@@ -18,11 +18,26 @@ let channel;
 export async function getChannel() {
   if (channel) return channel;
 
-  const connection = await amqp.connect(RABBITMQ_URL);
-  channel = await connection.createChannel();
+  try {
+    const connection = await amqp.connect(RABBITMQ_URL);
 
-  await channel.assertQueue(RABBITMQ_QUEUE, { durable: true });
+    connection.on("close", async () => {
+      console.warn("RabbitMQ connection closed, reconnecting...");
+      channel = null;
+      setTimeout(getChannel, 5000);
+    });
 
-  console.log("RabbitMQ connected and queue asserted:", RABBITMQ_QUEUE);
-  return channel;
+    connection.on("error", (err) => {
+      console.error("RabbitMQ connection error:", err.message);
+    });
+
+    channel = await connection.createChannel();
+    await channel.assertQueue(RABBITMQ_QUEUE, { durable: true });
+
+    console.log("RabbitMQ connected and queue asserted:", RABBITMQ_QUEUE);
+    return channel;
+  } catch (err) {
+    console.error("Failed to connect to RabbitMQ:", err.message);
+    setTimeout(getChannel, 5000);
+  }
 }
