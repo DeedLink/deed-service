@@ -15,8 +15,8 @@ app.use(express.json());
 
 app.use("/api/deeds", deedRoutes);
 
-const res = await sendToQueue({ event: "DeedServiceStarted", timestamp: new Date().toISOString() });
-console.log("Deed service start event sent to queue:", res);
+// const res = await sendToQueue({ event: "DeedServiceStarted", timestamp: new Date().toISOString() });
+// console.log("Deed service start event sent to queue:", res);
 
 app.use(errorHandler);
 
