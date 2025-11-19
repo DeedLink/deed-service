@@ -572,3 +572,47 @@ export const getPlans = async (req, res) => {
     });
   }
 };
+
+export const updateDeedOwners = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { owners } = req.body;
+
+    if (!Array.isArray(owners)) {
+      return res.status(400).json({ message: "owners must be an array" });
+    }
+
+    // Basic validation: each owner must have address and share
+    const normalized = owners.map((o) => {
+      if (!o.address || typeof o.share === "undefined") {
+        throw new Error("Each owner must include address and share");
+      }
+      return {
+        address: String(o.address).toLowerCase(),
+        share: Number(o.share),
+      };
+    });
+
+    // Optional: validate shares sum to 100
+    const totalShare = normalized.reduce((s, o) => s + (o.share || 0), 0);
+    if (totalShare !== 100) {
+      return res.status(400).json({ message: "Total owners' shares must equal 100" });
+    }
+
+    const deed = await Deed.findById(id);
+    if (!deed) {
+      return res.status(404).json({ message: "Deed not found" });
+    }
+
+    deed.owners = normalized;
+    await deed.save();
+
+    return res.status(200).json({
+      message: "Owners updated successfully",
+      deed,
+    });
+  } catch (error) {
+    console.error("Error updating deed owners:", error);
+    return res.status(500).json({ message: "Server error while updating owners", error: error.message });
+  }
+};
