@@ -18,7 +18,8 @@ import {
   updateOwnerAddress,
   updateFullOwnerAddress,
   insertPlan,
-  getPlans
+  getPlans,
+  updateDeedOwners
 } from "../controllers/deedController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
