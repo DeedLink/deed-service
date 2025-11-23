@@ -11,25 +11,32 @@ export const createDeed = async (req, res) => {
     res.status(201).json(deed);
     if (deed && deed._id && deed.owners && deed.owners.length > 0) {
       const ownerWalletAddress = deed.owners[0].address;
+      
       try {
         await setTransactionWhenDeedCreated(deed._id, ownerWalletAddress);
-        
-        // Convert Mongoose document to plain object for RabbitMQ
-        const deedObject = deed.toObject ? deed.toObject() : deed;
-        const payload = { 
-          ownerWalletAddress, 
-          deed: deedObject, 
-          time: new Date().toISOString() 
-        };
-        
-        console.log("Preparing to send notification for deed:", deed._id);
-        console.log("Owner wallet address:", ownerWalletAddress);
-        await sendToQueue(payload);
-        console.log("Notification payload sent to queue successfully");
       } catch (transactionError) {
-        console.error("Failed to set transaction or send notification after deed creation:", transactionError);
+        console.error("Failed to set transaction after deed creation:", transactionError);
         console.error("Error stack:", transactionError.stack);
       }
+
+      (async () => {
+        try {
+          const deedObject = deed.toObject ? deed.toObject() : deed;
+          const payload = { 
+            ownerWalletAddress, 
+            deed: deedObject, 
+            time: new Date().toISOString() 
+          };
+          
+          console.log("Preparing to send notification for deed:", deed._id);
+          console.log("Owner wallet address:", ownerWalletAddress);
+          await sendToQueue(payload);
+          console.log("Notification payload sent to queue successfully");
+        } catch (notificationError) {
+          console.error("Failed to send notification after deed creation (non-critical):", notificationError.message);
+          console.error("Notification error stack:", notificationError.stack);
+        }
+      })();
     } else {
       console.warn("Deed created but missing ID or owners, skipping transaction setup.");
       console.warn("Deed data:", { hasId: !!deed?._id, hasOwners: !!deed?.owners, ownersLength: deed?.owners?.length });

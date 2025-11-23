@@ -15,20 +15,40 @@ const RABBITMQ_URL = `amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@${RABBITMQ_HOST}:
 
 let channel;
 
+export function resetChannel() {
+  if (channel) {
+    try {
+      channel.close().catch(() => {});
+    } catch (e) {
+      // Ignore
+    }
+  }
+  channel = null;
+}
+
 export async function getChannel() {
-  if (channel) return channel;
+  if (channel) {
+    return channel;
+  }
 
   try {
-    const connection = await amqp.connect(RABBITMQ_URL);
+    console.log(`Attempting to connect to RabbitMQ at ${RABBITMQ_HOST}:${RABBITMQ_PORT}...`);
+    const connection = await amqp.connect(RABBITMQ_URL, {
+      heartbeat: 60,
+      connection_timeout: 10000,
+    });
 
     connection.on("close", async () => {
       console.warn("RabbitMQ connection closed, reconnecting...");
       channel = null;
-      setTimeout(getChannel, 5000);
+      setTimeout(() => {
+        getChannel().catch(err => console.error("Reconnection attempt failed:", err.message));
+      }, 5000);
     });
 
     connection.on("error", (err) => {
       console.error("RabbitMQ connection error:", err.message);
+      channel = null;
     });
 
     channel = await connection.createChannel();
@@ -38,6 +58,8 @@ export async function getChannel() {
     return channel;
   } catch (err) {
     console.error("Failed to connect to RabbitMQ:", err.message);
-    setTimeout(getChannel, 5000);
+    console.error("Connection URL:", RABBITMQ_URL.replace(/:[^:@]+@/, ':****@'));
+    channel = null;
+    throw new Error(`RabbitMQ connection failed: ${err.message}`);
   }
 }
