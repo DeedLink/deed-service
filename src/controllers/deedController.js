@@ -640,3 +640,241 @@ export const updateDeedOwners = async (req, res) => {
     return res.status(500).json({ message: "Server error while updating owners", error: error.message });
   }
 };
+
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
+
+const getCenterOfLocation = (location) => {
+  if (!location || location.length === 0) return null;
+  const sum = location.reduce((acc, point) => ({
+    lat: acc.lat + point.latitude,
+    lon: acc.lon + point.longitude
+  }), { lat: 0, lon: 0 });
+  return {
+    lat: sum.lat / location.length,
+    lon: sum.lon / location.length
+  };
+};
+
+const getDeedLocationFromPlan = async (deed) => {
+  const planServiceUrl = process.env.PLAN_SERVICE_URL || "http://localhost:5003/api/plans";
+  
+  try {
+    let planData = null;
+    
+    if (deed.surveyPlanNumber) {
+      const response = await fetch(`${planServiceUrl}/plan/${deed.surveyPlanNumber}`);
+      if (response.ok) {
+        planData = await response.json();
+      }
+    }
+    
+    if (!planData || !planData.success) {
+      const response = await fetch(`${planServiceUrl}/deed/${deed.deedNumber}`);
+      if (response.ok) {
+        planData = await response.json();
+      }
+    }
+    
+    if (planData && planData.success && planData.data) {
+      const plan = Array.isArray(planData.data) 
+        ? planData.data
+            .filter(p => p.status === "completed" && p.coordinates && p.coordinates.length > 0)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
+        : planData.data;
+      
+      if (plan && plan.coordinates && plan.coordinates.length > 0) {
+        return plan.coordinates.map(coord => ({
+          longitude: coord.longitude,
+          latitude: coord.latitude
+        }));
+      }
+    }
+  } catch (error) {
+    console.error(`Error fetching plan for deed ${deed.deedNumber}:`, error.message);
+  }
+  return null;
+};
+
+export const getNearbyLandSales = async (req, res) => {
+  try {
+    const { deedId } = req.params;
+    const { radiusKm = 10 } = req.query;
+
+    const deed = await Deed.findById(deedId);
+    if (!deed) {
+      return res.status(404).json({ message: "Deed not found" });
+    }
+
+    let location = deed.location || [];
+    
+    if (!location || location.length === 0 || (deed.surveyPlanNumber)) {
+      const planLocation = await getDeedLocationFromPlan(deed);
+      if (planLocation && planLocation.length > 0) {
+        location = planLocation;
+      }
+    }
+
+    if (!location || location.length === 0) {
+      return res.status(400).json({ message: "Deed location not available. Please complete survey first." });
+    }
+
+    const center = getCenterOfLocation(location);
+    if (!center) {
+      return res.status(400).json({ message: "Invalid location data" });
+    }
+
+    const allDeeds = await Deed.find({
+      _id: { $ne: deedId },
+      location: { $exists: true, $ne: [] },
+      tokenId: { $exists: true, $ne: null }
+    });
+
+    const nearbyDeeds = [];
+    for (const nearbyDeed of allDeeds) {
+      let nearbyLocation = nearbyDeed.location || [];
+      
+      if (!nearbyLocation || nearbyLocation.length === 0 || nearbyDeed.surveyPlanNumber) {
+        const planLocation = await getDeedLocationFromPlan(nearbyDeed);
+        if (planLocation && planLocation.length > 0) {
+          nearbyLocation = planLocation;
+        }
+      }
+      
+      if (nearbyLocation && nearbyLocation.length > 0) {
+        const nearbyCenter = getCenterOfLocation(nearbyLocation);
+        if (nearbyCenter) {
+          const distance = calculateDistance(
+            center.lat, center.lon,
+            nearbyCenter.lat, nearbyCenter.lon
+          );
+          if (distance <= parseFloat(radiusKm)) {
+            nearbyDeeds.push({
+              deedId: nearbyDeed._id.toString(),
+              deedNumber: nearbyDeed.deedNumber,
+              distance: distance.toFixed(2),
+              landType: nearbyDeed.landType,
+              landArea: nearbyDeed.landArea,
+              landSizeUnit: nearbyDeed.landSizeUnit,
+              district: nearbyDeed.district,
+              division: nearbyDeed.division,
+              hasSurveyPlan: !!nearbyDeed.surveyPlanNumber
+            });
+          }
+        }
+      }
+    }
+
+    const tnxServiceUrl = process.env.TNX_MICROSERVICE_URL || "http://localhost:5004/api/transactions";
+    const transactionTypes = ["open_market", "sale_transfer", "escrow_sale", "direct_transfer", "gift"];
+
+    const salesByType = {};
+    for (const type of transactionTypes) {
+      salesByType[type] = {
+        transactions: [],
+        totalAmount: 0,
+        count: 0,
+        averageAmount: 0
+      };
+    }
+
+    for (const nearbyDeed of nearbyDeeds) {
+      try {
+        const response = await fetch(`${tnxServiceUrl}/deed/${nearbyDeed.deedId}`);
+        if (response.ok) {
+          const transactions = await response.json();
+          const completedSales = transactions.filter(tx => 
+            tx.status === "completed" && 
+            transactionTypes.includes(tx.type) &&
+            tx.amount > 0
+          );
+
+          for (const tx of completedSales) {
+            if (salesByType[tx.type]) {
+              salesByType[tx.type].transactions.push({
+                ...tx,
+                deedNumber: nearbyDeed.deedNumber,
+                distance: nearbyDeed.distance,
+                landType: nearbyDeed.landType,
+                landArea: nearbyDeed.landArea
+              });
+              salesByType[tx.type].totalAmount += tx.amount;
+              salesByType[tx.type].count += 1;
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error fetching transactions for deed ${nearbyDeed.deedId}:`, error);
+      }
+    }
+
+    for (const type of transactionTypes) {
+      if (salesByType[type].count > 0) {
+        salesByType[type].averageAmount = salesByType[type].totalAmount / salesByType[type].count;
+      }
+    }
+
+    res.status(200).json({
+      nearbyDeedsCount: nearbyDeeds.length,
+      radiusKm: parseFloat(radiusKm),
+      salesByType,
+      nearbyDeeds: nearbyDeeds.slice(0, 20)
+    });
+  } catch (error) {
+    console.error("Error getting nearby land sales:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const updateDeedLocationFromPlan = async (req, res) => {
+  try {
+    const { deedNumber } = req.params;
+    const { location } = req.body;
+
+    if (!location || !Array.isArray(location) || location.length === 0) {
+      return res.status(400).json({ message: "Location array is required" });
+    }
+
+    const deed = await Deed.findOne({ deedNumber });
+    if (!deed) {
+      return res.status(404).json({ message: "Deed not found" });
+    }
+
+    const validatedLocation = location.map(coord => ({
+      longitude: Number(coord.longitude),
+      latitude: Number(coord.latitude)
+    })).filter(coord => 
+      !isNaN(coord.longitude) && 
+      !isNaN(coord.latitude) &&
+      coord.longitude !== 0 &&
+      coord.latitude !== 0
+    );
+
+    if (validatedLocation.length === 0) {
+      return res.status(400).json({ message: "Invalid location coordinates" });
+    }
+
+    deed.location = validatedLocation;
+    await deed.save();
+
+    res.status(200).json({
+      message: "Deed location updated successfully from survey plan",
+      deed: {
+        deedNumber: deed.deedNumber,
+        location: deed.location
+      }
+    });
+  } catch (error) {
+    console.error("Error updating deed location:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};

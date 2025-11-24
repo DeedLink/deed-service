@@ -19,13 +19,17 @@ import {
   updateFullOwnerAddress,
   insertPlan,
   getPlans,
-  updateDeedOwners
+  updateDeedOwners,
+  getNearbyLandSales,
+  updateDeedLocationFromPlan
 } from "../controllers/deedController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 router.get("/plans", protect, getPlans);
+router.get("/:deedId/nearby-sales", protect, getNearbyLandSales);
+router.put("/deed/:deedNumber/update-location", updateDeedLocationFromPlan);
 
 router.get("/surveyor/:surveyWalletAddress", protect, getDeedsBySurveyWalletAddress);
 router.get("/notary/:notaryWalletAddress", protect, getDeedsByNotaryWalletAddress);
