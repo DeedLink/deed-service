@@ -80,11 +80,11 @@ export const getDeedByDeedNumber = async (req, res) => {
       return res.status(404).json({ message: "Deed not found" });
     }
 
-    const isOwner = deed.owners.some(
-      (owner) => owner.address.toLowerCase() === walletAddress
+    const isOwner = deed.owners && deed.owners.some(
+      (owner) => owner.address && owner.address.toLowerCase() === walletAddress
     );
 
-    if (!isOwner && req.user.role !== "admin") {
+    if (!isOwner && req.user.role !== "admin" && req.user.role !== "registrar") {
       return res.status(403).json({ message: "Forbidden: You are not an owner of this deed" });
     }
 
@@ -267,8 +267,13 @@ export const getDeedsByOwnerWalletAddress = async (req, res) => {
   console.log(req.params);
   try {
     const { ownerWalletAddress } = req.params;
+    const normalizedAddress = ownerWalletAddress.toLowerCase();
+    
     const deeds = await Deed.find({
-      owners: { $elemMatch: { address: ownerWalletAddress } },
+      $or: [
+        { owners: { $elemMatch: { address: { $regex: new RegExp(`^${normalizedAddress}$`, "i") } } } },
+        { "owners.address": { $regex: new RegExp(`^${normalizedAddress}$`, "i") } }
+      ],
       tokenId: { $exists: true, $ne: null }
     });
 
