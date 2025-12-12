@@ -1,4 +1,5 @@
 import Deed from "../models/Deed.js";
+import DeedQRCode from "../models/DeedQRCode.js";
 import { ethers } from "ethers";
 import asyncHandler from "express-async-handler";
 import { fullDeedDirectTransaction, setTransactionWhenDeedCreated } from "../utils/externalAPI.js";
@@ -343,6 +344,62 @@ export const updatesurveyPlanNumber = async (req, res) => {
     res.status(500).json({ message: "Error updating survey number", error });
   }
 };
+
+export const getDeedForQR = asyncHandler(async (req, res) => {
+  const { qrId } = req.params;
+  const scannerAddress = req.query.scannerAddress?.toLowerCase();
+
+  if (!qrId) {
+    res.status(400);
+    throw new Error("qrId is required");
+  }
+
+  const qrCode = await DeedQRCode.findOne({ qrId });
+  if (!qrCode) {
+    res.status(404);
+    throw new Error("QR code not found");
+  }
+
+  let hasAccess = false;
+
+  if (qrCode.permissionType === "public") {
+    hasAccess = true;
+  } else if (qrCode.permissionType === "owner_only") {
+    if (scannerAddress) {
+      const deed = await Deed.findById(qrCode.deedId);
+      if (deed && deed.owners) {
+        hasAccess = deed.owners.some(
+          (owner) => owner.address && owner.address.toLowerCase() === scannerAddress
+        );
+      }
+    }
+  } else if (qrCode.permissionType === "restricted") {
+    if (scannerAddress) {
+      hasAccess = qrCode.allowedAddresses.includes(scannerAddress);
+    }
+  }
+
+  if (!hasAccess) {
+    res.status(403);
+    throw new Error("Access denied: You do not have permission to view this deed");
+  }
+
+  const deed = await Deed.findById(qrCode.deedId);
+  if (!deed) {
+    res.status(404);
+    throw new Error("Deed not found");
+  }
+
+  res.json({
+    success: true,
+    deed: deed.toObject(),
+    qrCode: {
+      qrId: qrCode.qrId,
+      permissionType: qrCode.permissionType,
+      createdAt: qrCode.createdAt,
+    },
+  });
+});
 
 // Signaturing process, I include this for all type of signaturing to be able.
 export const addSign = asyncHandler(async (req, res) => {
