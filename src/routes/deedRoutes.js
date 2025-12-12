@@ -21,8 +21,17 @@ import {
   getPlans,
   updateDeedOwners,
   getNearbyLandSales,
-  updateDeedLocationFromPlan
+  updateDeedLocationFromPlan,
+  getDeedForQR
 } from "../controllers/deedController.js";
+import {
+  generateQRCode,
+  checkPermissions,
+  updatePermissions,
+  deleteQRCode,
+  getMyQRCodes,
+  getQRCodesByDeed
+} from "../controllers/deedQRController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -30,6 +39,14 @@ const router = express.Router();
 router.get("/plans", protect, getPlans);
 router.get("/:deedId/nearby-sales", protect, getNearbyLandSales);
 router.put("/deed/:deedNumber/update-location", updateDeedLocationFromPlan);
+
+router.get("/qr/:qrId/permissions", checkPermissions);
+router.get("/qr/:qrId/deed", getDeedForQR);
+router.post("/qr/generate", protect, generateQRCode);
+router.put("/qr/:qrId/permissions", protect, updatePermissions);
+router.delete("/qr/:qrId", protect, deleteQRCode);
+router.get("/qr/my-codes", protect, getMyQRCodes);
+router.get("/qr/deed/:deedId", protect, getQRCodesByDeed);
 
 router.get("/surveyor/:surveyWalletAddress", protect, getDeedsBySurveyWalletAddress);
 router.get("/notary/:notaryWalletAddress", protect, getDeedsByNotaryWalletAddress);
